@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import TextBox
 from math import *
 
 MU_0 = 4 * pi * (10**-7)
@@ -19,18 +20,31 @@ class WireSegment:
     def get_B_at_point(self, point, iterations=500):
         """Calculates magnetic field vector at a point due to the wire segment
         Uses the Biot-Savart law with numeric integration for ease of implementation/avoiding doing the maths"""
-        r = point
-        B = [0, 0, 0]
-        for i in range(0, iterations):
-            dl = (self.end - self.start) / iterations
-            p = self.start + dl * i
-            r_prime = r - p
-            dB = (MU_0 / (4 * pi)) * self.current * np.cross(dl, r_prime) / (np.linalg.norm(r_prime) ** 3)
-            B += dB
+        # r = point
+        # B = [0, 0, 0]
+        # for i in range(0, iterations):
+        #     dl = (self.end - self.start) / iterations
+        #     p = self.start + dl * i
+        #     r_prime = r - p
+        #     dB = (MU_0 / (4 * pi)) * self.current * np.cross(dl, r_prime) / (np.linalg.norm(r_prime) ** 3)
+        #     B += dB
 
-        return B
+        # return B
 
-        # r = 
+        r_vec = point # point of interest
+        x_0 = self.start + (np.dot((r_vec - self.start), self.get_direction_vec()) * self.get_direction_vec()) # closest point on line of wire to the point of interest, obtained using vector projections
+        a = np.dot((x_0 - self.start), self.get_direction_vec())
+        b = np.dot((x_0 - self.end), self.get_direction_vec())
+
+        R = np.linalg.norm(r_vec - x_0) # minimum distance from the point of interest to wire
+
+        # evaluation of integral
+        B_norm = (MU_0 * self.current / (4 * pi * R)) * ((b / sqrt(b**2 + R**2)) - (a / sqrt(a**2 + R**2)))
+
+        B_dir = np.cross(self.get_direction_vec(), r_vec - x_0)
+        B_dir = B_dir / np.linalg.norm(B_dir)
+
+        return B_dir * B_norm
     
 class SquareHelmholtzCoil:
     def __init__(self, current, turns, side_length, centre, spacing, centre_axis, alignment, coil_width=0):
@@ -123,7 +137,7 @@ class SquareHelmholtzCoil:
 # print(wire.get_direction_vec())
 # print(wire.get_B_at_point([0, 0, 0]))
 
-hh_coil = SquareHelmholtzCoil(10, 1, 1, np.array([0, 0, 0]), 0.5445 * 2, np.array([1, 0, 0]), np.array([0, 1, 0]), 0)
+hh_coil = SquareHelmholtzCoil(1, 40, 1, np.array([0, 0, 0]), 0.5445 * 2, np.array([1, 0, 0]), np.array([0, 1, 0]), 0.02)
 
 fig = plt.figure()
 ax1 = fig.add_subplot(2, 1, 1, projection='3d')
@@ -148,10 +162,15 @@ ax1.set_title('Coils')
 
 ax2 = fig.add_subplot(2, 1, 2)
 
-x_coords = np.linspace(-1, 1, 30)
+x_coords = np.linspace(-1, 1, 100)
 B = [np.linalg.norm(hh_coil.get_B_at_point([x, 0, 0])) for x in x_coords]
 
 ax2.plot(x_coords, B)
 
-plt.show()
+# axbox = fig.add_axes([0.1, 0.05, 0.8, 0.075])
+# side_length_tb = TextBox(axbox, "Side length (m)", textalignment="left")
+# turns_tb = TextBox(axbox, "Number of turns", textalignment="left")
+# current_tb = TextBox(axbox, "Current (A)", textalignment="left")
+# spacing_tb = TextBox(axbox, "Coil Spacing (m)", textalignment="left")
 
+plt.show()
