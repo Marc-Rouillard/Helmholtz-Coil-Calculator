@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import *
 
-MU_0 = 4 * pi * (10e-7)
+MU_0 = 4 * pi * (10**-7)
 
 class WireSegment:
     def __init__(self, start, end, current):
@@ -16,7 +16,7 @@ class WireSegment:
     def get_direction_vec(self):
         return ((self.end - self.start) / self.get_length())
     
-    def get_B_at_point(self, point, iterations=1000):
+    def get_B_at_point(self, point, iterations=500):
         """Calculates magnetic field vector at a point due to the wire segment
         Uses the Biot-Savart law with numeric integration for ease of implementation/avoiding doing the maths"""
         r = point
@@ -29,6 +29,8 @@ class WireSegment:
             B += dB
 
         return B
+
+        # r = 
     
 class SquareHelmholtzCoil:
     def __init__(self, current, turns, side_length, centre, spacing, centre_axis, alignment, coil_width=0):
@@ -58,6 +60,11 @@ class SquareHelmholtzCoil:
         self.x_axis = self.x_axis / np.linalg.norm(self.x_axis)
         self.y_axis = np.cross(self.z_axis, self.x_axis)
         self.width = coil_width
+
+        if (self.width == 0):
+            # This is equivalent and makes computation faster, especially for a large number of turns
+            self.current *= self.turns
+            self.turns = 1
         
         self.wire_segments = []
         self.calculate_wires()
@@ -75,8 +82,12 @@ class SquareHelmholtzCoil:
                                 - (self.y_axis * self.a / 2))
         
         for side in range(0, 4):
-            axial_offset = (-self.width/2) * self.z_axis
-            turn_gap = (self.width/(self.turns - 1)) * self.z_axis
+            if self.turns > 1:
+                axial_offset = (-self.width/2) * self.z_axis
+                turn_gap = (self.width/(self.turns - 1)) * self.z_axis
+            else:
+                axial_offset = 0
+                turn_gap = 0
             for turn in range(0, self.turns):
                 self.wire_segments.append(WireSegment(
                     self.o + start_corner_offset + axial_offset + (self.z_axis * self.spacing / 2),
@@ -112,10 +123,10 @@ class SquareHelmholtzCoil:
 # print(wire.get_direction_vec())
 # print(wire.get_B_at_point([0, 0, 0]))
 
-hh_coil = SquareHelmholtzCoil(1, 10, 1, np.array([0, 0, 0]), 0.5, np.array([1, 0, 0]), np.array([0, 1, 0]), 0.02)
+hh_coil = SquareHelmholtzCoil(10, 1, 1, np.array([0, 0, 0]), 0.5445 * 2, np.array([1, 0, 0]), np.array([0, 1, 0]), 0)
 
 fig = plt.figure()
-ax = plt.axes(projection='3d')
+ax1 = fig.add_subplot(2, 1, 1, projection='3d')
 
 for wire in hh_coil.wire_segments:
     wire_x = []
@@ -129,8 +140,18 @@ for wire in hh_coil.wire_segments:
     wire_y.append(wire.end[1])
     wire_z.append(wire.end[2])
 
-    ax.plot3D(wire_x, wire_y, wire_z, '#B87333')
+    ax1.plot3D(wire_x, wire_y, wire_z, '#B87333')
 
-ax.set_title('Coils')
+ax1.plot3D([-0.5, 0.5], [0, 0], [0, 0], 'black')
+
+ax1.set_title('Coils')
+
+ax2 = fig.add_subplot(2, 1, 2)
+
+x_coords = np.linspace(-1, 1, 30)
+B = [np.linalg.norm(hh_coil.get_B_at_point([x, 0, 0])) for x in x_coords]
+
+ax2.plot(x_coords, B)
+
 plt.show()
 
