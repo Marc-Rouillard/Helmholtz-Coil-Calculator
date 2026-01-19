@@ -127,20 +127,15 @@ class SquareHelmholtzCoil:
 
         return B
 
-        
-            
-
-        
-
 # wire = WireSegment(np.array([-0.17, -0.35, -0.35]), np.array([-0.17, -0.35, 0.35]), 40)
 # print(wire.get_length())
 # print(wire.get_direction_vec())
 # print(wire.get_B_at_point([0, 0, 0]))
 
-hh_coil = SquareHelmholtzCoil(1, 40, 1, np.array([0, 0, 0]), 0.5445 * 2, np.array([1, 0, 0]), np.array([0, 1, 0]), 0.02)
+hh_coil = SquareHelmholtzCoil(40, 1, 1, np.array([0, 0, 0]), 0.5445 * 2, np.array([1, 0, 0]), np.array([0, 1, 0]), 0)
 
 fig = plt.figure()
-ax1 = fig.add_subplot(2, 1, 1, projection='3d')
+ax1 = fig.add_subplot(1, 2, 1, projection='3d')
 
 for wire in hh_coil.wire_segments:
     wire_x = []
@@ -156,16 +151,87 @@ for wire in hh_coil.wire_segments:
 
     ax1.plot3D(wire_x, wire_y, wire_z, '#B87333')
 
-ax1.plot3D([-0.5, 0.5], [0, 0], [0, 0], 'black')
+# ax1.plot3D([-0.5, 0.5], [0, 0], [0, 0], 'black')
 
+x_coords, y_coords, z_coords = np.meshgrid(np.arange(-0.4, 0.6, 0.2),
+                                             np.arange(-0.4, 0.6, 0.2),
+                                             np.arange(-0.4, 0.6, 0.2))
+us = []
+vs = []
+ws = []
+
+# xs = np.arange(-0.6, 0.6, 0.1)
+# ys = [0] * 12
+# zs = [0] * 12
+
+# us = []
+# vs = []
+# ws = []
+
+# for x, y, z in zip(xs, ys, zs):
+#     u, v, w = hh_coil.get_B_at_point([x, y, z]) * 10000
+#     print(u, v, w)
+#     us.append(u)
+#     vs.append(v)
+#     ws.append(w)
+
+# print(us)
+
+# xs = np.array(xs)
+# ys = np.array(ys)
+# zs = np.array(zs)
+# us = np.array(us)
+# vs = np.array(vs)
+# ws = np.array(ws)
+
+# print(xs.shape, ys.shape, zs.shape)
+# print(us.shape, ys.shape, zs.shape)
+
+field_vectors = []
+for xp, yp, zp in zip(x_coords, y_coords, z_coords):
+    # print(xp)
+    up = []
+    vp = []
+    wp = []
+    for xl, yl, zl in zip(xp, yp, zp):
+        # print(xl)
+        ul = []
+        vl = []
+        wl = []
+        for x, y, z in zip(xl, yl, zl):
+            # for (x, y,  )
+            # print(x)
+            u, v, w = hh_coil.get_B_at_point([x, y, z]) * 10000 * 0.05
+            ul.append(u)
+            vl.append(v)
+            wl.append(w)
+            
+        up.append(ul)
+        vp.append(vl)
+        wp.append(wl)
+
+    us.append(up)
+    vs.append(vp)
+    ws.append(wp)
+
+ax1.quiver(x_coords, y_coords, z_coords, us, vs, ws, normalize = True, length = 0.05)
 ax1.set_title('Coils')
 
-ax2 = fig.add_subplot(2, 1, 2)
+ax2 = fig.add_subplot(1, 2, 2, projection='3d')
 
-x_coords = np.linspace(-1, 1, 100)
-B = [np.linalg.norm(hh_coil.get_B_at_point([x, 0, 0])) for x in x_coords]
+x_coords = np.linspace(-0.06, 0.06, 30)
+y_coords = np.linspace(-0.06, 0.06, 30)
+x_coords, y_coords = np.meshgrid(x_coords, y_coords)
+field_strengths = []
 
-ax2.plot(x_coords, B)
+for xl, yl in zip(x_coords, y_coords):
+    field_strengths_l = []
+    for x, y in zip(xl, yl):
+        field_strengths_l.append(np.linalg.norm(hh_coil.get_B_at_point([x, y, 0])))
+    field_strengths.append(field_strengths_l)
+
+
+ax2.plot_surface(x_coords, y_coords, np.array(field_strengths))
 
 # axbox = fig.add_axes([0.1, 0.05, 0.8, 0.075])
 # side_length_tb = TextBox(axbox, "Side length (m)", textalignment="left")
