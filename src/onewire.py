@@ -126,17 +126,32 @@ class SquareHelmholtzCoil:
             B += wire.get_B_at_point(point)
 
         return B
+    
+coil_current = 0.75
+coil_turns = 120
+coil_side_length = 1
+coil_spacing = 0.544506 * 1
+coil_width = 0
 
-# wire = WireSegment(np.array([-0.17, -0.35, -0.35]), np.array([-0.17, -0.35, 0.35]), 40)
-# print(wire.get_length())
-# print(wire.get_direction_vec())
-# print(wire.get_B_at_point([0, 0, 0]))
 
-hh_coil = SquareHelmholtzCoil(40, 1, 1, np.array([0, 0, 0]), 0.5445 * 2, np.array([1, 0, 0]), np.array([0, 1, 0]), 0)
+hh_coil = SquareHelmholtzCoil(coil_current, coil_turns, coil_side_length, np.array([0, 0, 0]), coil_spacing, np.array([1, 0, 0]), np.array([0, 1, 0]), 0)
+
+roi = 0.09 # region of interest (defines the side length of a cube centred on the origin.
+            # All plots and stats are limited to this range)
+quiver_resolution = coil_spacing / 6 # number of points to plot
+# surface_resolution = 11 # number of points to plot on each axis over the roi for surface plots
+# line_resolution = 51 # number of points to plot within the roi for line graphs
 
 fig = plt.figure()
-ax1 = fig.add_subplot(1, 2, 1, projection='3d')
 
+################ QUIVER AND COILS ####################
+ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+ax1.set_aspect('equal')
+ax1.set_xlabel("x (m)")
+ax1.set_ylabel("y (m)")
+ax1.set_zlabel("z (m)")
+
+# Plot coils
 for wire in hh_coil.wire_segments:
     wire_x = []
     wire_y = []
@@ -153,70 +168,62 @@ for wire in hh_coil.wire_segments:
 
 # ax1.plot3D([-0.5, 0.5], [0, 0], [0, 0], 'black')
 
-x_coords, y_coords, z_coords = np.meshgrid(np.arange(-0.4, 0.6, 0.2),
-                                             np.arange(-0.4, 0.6, 0.2),
-                                             np.arange(-0.4, 0.6, 0.2))
-us = []
-vs = []
-ws = []
+x_coords = []
+y_coords = []
+z_coords = []
 
-# xs = np.arange(-0.6, 0.6, 0.1)
-# ys = [0] * 12
-# zs = [0] * 12
+B_x_values = []
+B_y_values = []
+B_Z_values = []
 
-# us = []
-# vs = []
-# ws = []
+B_0 = hh_coil.get_B_at_point([0, 0, 0])
+B_0_norm = np.linalg.norm(B_0)
+B_max = B_0_norm
+B_min = B_0_norm
+deviation_max = 0
+B_min_coords = (0, 0, 0)
+B_max_coords = (0, 0, 0)
+deviation_max_coords = (0, 0, 0)
 
-# for x, y, z in zip(xs, ys, zs):
-#     u, v, w = hh_coil.get_B_at_point([x, y, z]) * 10000
-#     print(u, v, w)
-#     us.append(u)
-#     vs.append(v)
-#     ws.append(w)
+for x in np.arange(-coil_spacing/2 + quiver_resolution, coil_spacing/2, quiver_resolution):
+    for y in np.arange(-coil_side_length/2 + quiver_resolution, coil_side_length/2, quiver_resolution):
+        for z in np.arange(-coil_side_length/2 + quiver_resolution, coil_side_length/2, quiver_resolution):
+            x_coords.append(x)
+            y_coords.append(y)
+            z_coords.append(z)
 
-# print(us)
+            B = hh_coil.get_B_at_point([x, y, z])
+            B_norm = np.linalg.norm(B)
+            if B_norm < B_min:
+                B_min = B_norm
+                B_min_coords = (x, y, z)
+            elif B_norm > B_max:
+                B_max = B_norm
+                B_max_coords = (x, y, z)
 
-# xs = np.array(xs)
-# ys = np.array(ys)
-# zs = np.array(zs)
-# us = np.array(us)
-# vs = np.array(vs)
-# ws = np.array(ws)
 
-# print(xs.shape, ys.shape, zs.shape)
-# print(us.shape, ys.shape, zs.shape)
+            deviation = acos(np.dot(B, B_0) / (B_0_norm * np.linalg.norm(B)))
+            if deviation > deviation_max:
+                deviation_max = deviation
+                deviation_max_coords = (x, y, z)
 
-field_vectors = []
-for xp, yp, zp in zip(x_coords, y_coords, z_coords):
-    # print(xp)
-    up = []
-    vp = []
-    wp = []
-    for xl, yl, zl in zip(xp, yp, zp):
-        # print(xl)
-        ul = []
-        vl = []
-        wl = []
-        for x, y, z in zip(xl, yl, zl):
-            # for (x, y,  )
-            # print(x)
-            u, v, w = hh_coil.get_B_at_point([x, y, z]) * 10000 * 0.05
-            ul.append(u)
-            vl.append(v)
-            wl.append(w)
-            
-        up.append(ul)
-        vp.append(vl)
-        wp.append(wl)
+            B_x, B_y, B_z = B
+            B_x_values.append(B_x)
+            B_y_values.append(B_y)
+            B_Z_values.append(B_z)
 
-    us.append(up)
-    vs.append(vp)
-    ws.append(wp)
+ax1.quiver(x_coords, y_coords, z_coords, B_x_values, B_y_values, B_Z_values, normalize = True, length = quiver_resolution/3)
 
-ax1.quiver(x_coords, y_coords, z_coords, us, vs, ws, normalize = True, length = 0.05)
-ax1.set_title('Coils')
+ax1.scatter(B_min_coords[0], B_min_coords[1], B_min_coords[2])
+ax1.scatter(B_max_coords[0], B_max_coords[1], B_max_coords[2], c="r")
+ax1.scatter(deviation_max_coords[0], deviation_max_coords[1], [deviation_max_coords[2]], c="g")
 
+print(f"Flux density at (0, 0, 0): {B_0_norm:.2e} T")
+print(f"Max flux density: {B_max:.2e} T ({(100 * (B_max - B_0_norm) / B_0_norm):+.2f}%)")
+print(f"Min flux density: {B_min:.2e} T ({(100 * (B_min - B_0_norm) / B_0_norm):+.2f}%)")
+print(f"Max deviation: {deviation_max * 180 / pi:.2f} deg")
+
+############## SURFACE PLOT ################
 ax2 = fig.add_subplot(1, 2, 2, projection='3d')
 
 x_coords = np.linspace(-0.06, 0.06, 30)
@@ -233,10 +240,13 @@ for xl, yl in zip(x_coords, y_coords):
 
 ax2.plot_surface(x_coords, y_coords, np.array(field_strengths))
 
-# axbox = fig.add_axes([0.1, 0.05, 0.8, 0.075])
-# side_length_tb = TextBox(axbox, "Side length (m)", textalignment="left")
-# turns_tb = TextBox(axbox, "Number of turns", textalignment="left")
-# current_tb = TextBox(axbox, "Current (A)", textalignment="left")
-# spacing_tb = TextBox(axbox, "Coil Spacing (m)", textalignment="left")
+# axbox1 = fig.add_axes([0.3, 0.05, 0.6, 0.05])
+# side_length_tb = TextBox(axbox1, "Side length (m)", textalignment="left")
+# axbox2 = fig.add_axes([0.3, 0.12, 0.6, 0.05])
+# turns_tb = TextBox(axbox2, "Number of turns", textalignment="left")
+# axbox3 = fig.add_axes([0.3, 0.19, 0.6, 0.05])
+# current_tb = TextBox(axbox3, "Current (A)", textalignment="left")
+# axbox4 = fig.add_axes([0.3, 0.26, 0.6, 0.05])
+# spacing_tb = TextBox(axbox4, "Coil Spacing (m)", textalignment="left")
 
 plt.show()
