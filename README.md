@@ -9,7 +9,7 @@ This is a basic calculator for analysing field strength and uniformity in a squa
 ![alt text](images/printouts.png)
 
 ## Usage
-Clone the repo from GitHub open the folder in a terminal. Activate a virtual environment if you wish and then run:
+Clone the repo from GitHub and open the folder in a terminal. Activate a virtual environment if you wish and then run:
 
 `pip install -r requirements.txt`
 
