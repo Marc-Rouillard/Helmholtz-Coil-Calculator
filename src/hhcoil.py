@@ -45,7 +45,7 @@ class WireSegment:
         return B_dir * B_norm
     
 class SquareHelmholtzCoil:
-    def __init__(self, current, turns, side_length, centre, spacing, centre_axis, alignment, coil_width=0):
+    def __init__(self, current, turns, side_length, spacing, coil_width, centre, centre_axis, alignment):
         """
         All lengths / coordinates in metres
         current - electrical current flowing through each coil (amps)
