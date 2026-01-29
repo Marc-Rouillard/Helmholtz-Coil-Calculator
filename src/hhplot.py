@@ -43,6 +43,7 @@ def plot_coils(ax :matplotlib.axes.Axes, hh_coil: SquareHelmholtzCoil,
     :param quivers: `True` if vector field should be plotted (default `True`)
     :param quiver_samples: number of quivers to plot along each axis
     """
+    ax.set_title("Coils")
     ax.set_aspect('equal')
     ax.set_xlabel("x (m)")
     ax.set_ylabel("y (m)")
@@ -156,6 +157,7 @@ def print_roi_data(hh_coil: SquareHelmholtzCoil, roi_range: float,
                     deviation_max_coords = (x, y, z)
 
     # Print results
+    print(f"Over {int(roi_range * 1000)}x{int(roi_range * 1000)}x{int(roi_range * 1000)} mm volume:")
     print(f"Flux density at (0, 0, 0): {B_0_norm:.2e} T")
     print(f"Max flux density: {B_max:.2e} T ({(100 * (B_max - B_0_norm) / B_0_norm):+.2f}%)")
     print(f"Min flux density: {B_min:.2e} T ({(100 * (B_min - B_0_norm) / B_0_norm):+.2f}%)")
@@ -206,6 +208,7 @@ def plot_field_over_plane(ax: matplotlib.axes.Axes, plane: str, range: float,
             field_strengths[i].append(np.linalg.norm(hh_coil.get_B_at_point(coords)))
 
     ax.plot_surface(a_coords, b_coords, np.array(field_strengths))
+    ax.set_title(f"Field intensity over {plane} plane")
     ax.set_xlabel(f"{plane[0]} (m)")
     ax.set_ylabel(f"{plane[1]} (m)")
     ax.set_zlabel("B (T)")
@@ -234,8 +237,8 @@ def plot_field_over_axis(ax: matplotlib.axes.Axes, axis: str, range: float,
         case _:
             raise ValueError("Parameter `axis` must be one of 'x', 'y' or 'z'.")
 
+    ax.set_title(f"Field intensity over {axis} axis")
     ax.plot(points, B_values)
     ax.set_xlabel(f"{axis} (m)")
     ax.set_ylabel("B (T)")
     ax.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
-

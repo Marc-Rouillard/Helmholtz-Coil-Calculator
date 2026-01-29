@@ -50,16 +50,16 @@ class SquareHelmholtzCoil:
         All lengths / coordinates in metres
         current - electrical current flowing through each coil (amps)
         turns - number of turns of wire in each coil
-        centre - 3d coordinates of centre (midpoint between coils)
         side_length - Square side length of coils
         spacing - distance between coil centres. If the coils have a width, then this distance is measured from centre
                     to centre rather than inside edge to inside edge
+        coil_width - defaults to 0 for a perfectly thin coil. Can be set to a positive quantity to represent a coil
+                with finite width from the first to the last turn of wire
+        centre - 3d coordinates of centre (midpoint between coils)
         centre_axis - a 3d vector orthogonal to the coils. The sense defines the current direction.
                         If you point the thumb of your right hand in the direction of this vector, the direction your fingers
                         wrap is the current direction in the coils
         alignment - a 3d vector aligned with the direction of one of the coil sides
-        coil_width - defaults to 0 for a perfectly thin coil. Can be set to a positive quantity to represent a coil
-                with finite width from the first to the last turn of wire
         """
         self.current = current
         self.turns = turns

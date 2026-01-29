@@ -4,16 +4,19 @@ import hhplot as hhp
 import numpy as np
 from matplotlib import pyplot as plt
 
+# A simple matplotlib based calculator for square Helmholtz coils. Change the 
+# parameters below and run the program to see the results.
+
 ########## CHANGE THESE PARAMETERS ##########
 
-coil_current = 0.75
+coil_current = 1
 coil_turns = 125
-coil_side_length = 1
-coil_spacing = 0.6
+coil_side_length = 0.8032
+coil_spacing = 0.437
 coil_width = 0 # Ideal coils are considered to have 0 width. To see the effect
                 # of a finite width, change this value. However a non-zero width
                 # may make computation times excessive if the number of turns is high.
-roi = 0.3 # region of interest (defines the side length of a cube centred on the origin.
+roi = 0.25 # region of interest (defines the side length of a cube centred on the origin.
             # All plots and stats are limited to this range)
 
 #############################################
@@ -22,7 +25,7 @@ roi = 0.3 # region of interest (defines the side length of a cube centred on the
 hh_coil = hhc.SquareHelmholtzCoil(coil_current, coil_turns, coil_side_length, coil_spacing, coil_width,
                                    np.array([0, 0, 0]), np.array([1, 0, 0]), np.array([0, 1, 0]))
 
-fig = plt.figure(layout="constrained")
+fig = plt.figure("Helmholtz Coil Calculator", layout="constrained")
 axes = fig.subplot_mosaic(
     [
         ["coils", "xy", "x"],
