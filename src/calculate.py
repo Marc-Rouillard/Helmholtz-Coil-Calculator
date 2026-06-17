@@ -22,7 +22,7 @@ COIL_SPACING = COIL_SIDE_LENGTH * IDEAL_SQUARE_COIL_SEPARATION # m
 COIL_WIDTH = 0 # m. Ideal coils are considered to have 0 width. To see the effect
                 # of a finite width, change this value. However a non-zero width
                 # may make computation times excessive if the number of turns is high.
-ROI_SHAPE = ROIShape.SPHERE
+ROI_SHAPE = ROIShape.SPHERE # ROIShape.SPHERE or ROIShape.CUBE
 ROI_CUBE_SIDE_LENGTH = 0.18 # metres. Defines the side length of a cube centred on the origin.
             # All plots and stats are limited to this range)
 ROI_SPHERE_DIAMETER = 0.18 # metres. Defines the diameter of a sphere centred on the origin.
@@ -44,8 +44,6 @@ axes = fig.subplot_mosaic(
         ("coils", "xy", "yz"): {"projection": "3d"},
     },
 )
-
-# plt.subplots_adjust(wspace=0.5, hspace=0.5)
 
 print("Calculating region of interest parameters...")
 match ROI_SHAPE:
