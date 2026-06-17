@@ -18,17 +18,6 @@ class WireSegment:
     def get_B_at_point(self, point, iterations=500):
         """Calculates magnetic field vector at a point due to the wire segment
         Uses the Biot-Savart law with numeric integration for ease of implementation/avoiding doing the maths"""
-        # r = point
-        # B = [0, 0, 0]
-        # for i in range(0, iterations):
-        #     dl = (self.end - self.start) / iterations
-        #     p = self.start + dl * i
-        #     r_prime = r - p
-        #     dB = (MU_0 / (4 * pi)) * self.current * np.cross(dl, r_prime) / (np.linalg.norm(r_prime) ** 3)
-        #     B += dB
-
-        # return B
-
         r_vec = point # point of interest
         x_0 = self.start + (np.dot((r_vec - self.start), self.get_direction_vec()) * self.get_direction_vec()) # closest point on line of wire to the point of interest, obtained using vector projections
         a = np.dot((x_0 - self.start), self.get_direction_vec())

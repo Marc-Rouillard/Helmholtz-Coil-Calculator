@@ -5,32 +5,11 @@ from math import acos, pi
 
 from hhcoil import SquareHelmholtzCoil
 
-# hh_coil = hh.SquareHelmholtzCoil(coil_current, coil_turns, coil_side_length, np.array([0, 0, 0]), coil_spacing, np.array([1, 0, 0]), np.array([0, 1, 0]), coil_width)
-
-# roi = 1.2 # region of interest (defines the side length of a cube centred on the origin.
-#             # All plots and stats are limited to this range)
-
-
-# samples_per_axis = 7 # number of points to sample along each axis to plot quiver
-
-# surface_samples = 29 # number of points to plot on each axis over the roi for surface plots
-# line_samples = 49 # number of points to plot within the roi for line graphs
-
-# fig = plt.figure(layout="none")
-# axes = fig.subplot_mosaic(
-#     [
-#         ["coils", "xy", "x"],
-#         ["coils", "yz", "y"]
-#     ],
-#     per_subplot_kw={
-#         ("coils", "xy", "yz"): {"projection": "3d"},
-#     },
-# )
-
 DEFAULT_QUIVER_SAMPLES = 5
 DEFAULT_SURFACE_SAMPLES = 25
 DEFAULT_LINE_SAMPLES = 45
-DEFAULT_POI_SAMPLES = 15
+DEFAULT_CUBE_ROI_SAMPLES = 15
+DEFAULT_SPHERICAL_ROI_SAMPLES = 25;
 
 def plot_coils(ax :matplotlib.axes.Axes, hh_coil: SquareHelmholtzCoil,
                quivers: bool=True, quiver_samples: int=DEFAULT_QUIVER_SAMPLES):
@@ -98,7 +77,7 @@ def plot_coils(ax :matplotlib.axes.Axes, hh_coil: SquareHelmholtzCoil,
                       normalize = True,
                       length = 0.3 * bb_side_length/(quiver_samples - 1))
             
-def plot_roi(ax: matplotlib.axes.Axes, roi_range: float):
+def plot_roi_cube(ax: matplotlib.axes.Axes, roi_range: float):
     """
     Plot a wire frame cube to show the region of interest
     
@@ -111,9 +90,9 @@ def plot_roi(ax: matplotlib.axes.Axes, roi_range: float):
             ax.plot([i, i], [-roi_range/2, roi_range/2], [j, j], c="black")
             ax.plot([i, i], [j, j], [-roi_range/2, roi_range/2], c="black")
 
-def print_roi_data(hh_coil: SquareHelmholtzCoil, roi_range: float,
+def print_roi_cube_data(hh_coil: SquareHelmholtzCoil, roi_range: float,
                            ax: matplotlib.axes.Axes=None,
-                           samples: int = DEFAULT_POI_SAMPLES):
+                           samples: int = DEFAULT_CUBE_ROI_SAMPLES):
     """
     Find maximum field strength, minimum field strength and maximum angular
     deviation within region of interest and optionally plot the locations of each point.
@@ -158,10 +137,70 @@ def print_roi_data(hh_coil: SquareHelmholtzCoil, roi_range: float,
 
     # Print results
     print(f"Over {int(roi_range * 1000)}x{int(roi_range * 1000)}x{int(roi_range * 1000)} mm volume:")
-    print(f"Flux density at (0, 0, 0): {B_0_norm:.2e} T")
-    print(f"Max flux density: {B_max:.2e} T ({(100 * (B_max - B_0_norm) / B_0_norm):+.2f}%)")
-    print(f"Min flux density: {B_min:.2e} T ({(100 * (B_min - B_0_norm) / B_0_norm):+.2f}%)")
-    print(f"Max deviation: {deviation_max * 180 / pi:.2f} deg")
+    print(f"    Flux density at (0, 0, 0): {B_0_norm:.3e} T")
+    print(f"    Max flux density: {B_max:.3e} T ({(100 * (B_max - B_0_norm) / B_0_norm):+.3f}%)")
+    print(f"    Min flux density: {B_min:.3e} T ({(100 * (B_min - B_0_norm) / B_0_norm):+.3f}%)")
+    print(f"    Max deviation: {deviation_max * 180 / pi:.3f} deg")
+
+    # Plot locations
+    if ax is not None:
+        ax.scatter(B_min_coords[0], B_min_coords[1], B_min_coords[2])
+        ax.scatter(B_max_coords[0], B_max_coords[1], B_max_coords[2], c="r")
+        ax.scatter(deviation_max_coords[0], deviation_max_coords[1],
+                            [deviation_max_coords[2]], c="g")
+        
+def print_spherical_roi_data(hh_coil: SquareHelmholtzCoil, roi_diameter: float,
+                           ax: matplotlib.axes.Axes=None,
+                           samples: int = DEFAULT_SPHERICAL_ROI_SAMPLES):
+    """
+    Find maximum field strength, minimum field strength and maximum angular
+    deviation within region of interest and optionally plot the locations of each point.
+    This function works by just sampling points within the region of interest.
+    It is a crude method, but will still be quite accurate when the region of
+    interest is small with respect to the coils. However, it may be less
+    accurate with a larger roi or very low sample count.
+    
+    :param hh_coil: SquareHelmholtzCoil object
+    :param roi_range: range to check, centred on origin (defines side length of 
+                roi cube)
+    :param axes: if not None, the locations of each point of interest will be
+                plotted on these axes.
+    :param samples: number of samples to take along each axis
+    """
+    B_0 = hh_coil.get_B_at_point([0, 0, 0])
+    B_0_norm = np.linalg.norm(B_0)
+    B_max = B_0_norm
+    B_min = B_0_norm
+    deviation_max = 0
+    B_min_coords = (0, 0, 0)
+    B_max_coords = (0, 0, 0)
+    deviation_max_coords = (0, 0, 0)
+
+    for x in np.linspace(-roi_diameter/2, roi_diameter/2, samples):
+        for y in np.linspace(-roi_diameter/2, roi_diameter/2, samples):
+            for z in np.linspace(-roi_diameter/2, roi_diameter/2, samples):
+                if (x**2 + y**2 + z**2 < (roi_diameter**2)/4):
+                    B = hh_coil.get_B_at_point([x, y, z])
+                    B_norm = np.linalg.norm(B)
+                    if B_norm < B_min:
+                        B_min = B_norm
+                        B_min_coords = (x, y, z)
+                    elif B_norm > B_max:
+                        B_max = B_norm
+                        B_max_coords = (x, y, z)
+
+
+                    deviation = acos(np.dot(B, B_0) / (B_0_norm * np.linalg.norm(B)))
+                    if deviation > deviation_max:
+                        deviation_max = deviation
+                        deviation_max_coords = (x, y, z)
+
+    # Print results
+    print(f"Over {int(roi_diameter * 1000)} mm diameter sphere:")
+    print(f"    Flux density at (0, 0, 0): {B_0_norm:.3e} T")
+    print(f"    Max flux density: {B_max:.3e} T ({(100 * (B_max - B_0_norm) / B_0_norm):+.3f}%)")
+    print(f"    Min flux density: {B_min:.3e} T ({(100 * (B_min - B_0_norm) / B_0_norm):+.3f}%)")
+    print(f"    Max deviation: {deviation_max * 180 / pi:.3f} deg")
 
     # Plot locations
     if ax is not None:
@@ -214,16 +253,16 @@ def plot_field_over_plane(ax: matplotlib.axes.Axes, plane: str, range: float,
     ax.set_zlabel("B (T)")
     ax.ticklabel_format(axis="z", style="sci", scilimits=(-2, 2))
 
-def plot_field_over_axis(ax: matplotlib.axes.Axes, axis: str, range: float,
+def plot_field_along_axis(ax: matplotlib.axes.Axes, axis: str, range: float,
                          hh_coil: SquareHelmholtzCoil,
                          samples=DEFAULT_LINE_SAMPLES):
     """
-    Plot magnetic field over an axis as a line graph.
+    Plot magnetic field along an axis as a line graph.
     
     :param ax: matplotlib.axes.Axes object on which to plot
     :param axis: can be 'x', 'y' or 'z'
     :param range: range to plot, centred on origin.
-        (i.e if range=3, the plot will go from -0.15 to 0.15)
+        (i.e if range=0.3, the plot will go from -0.15 to 0.15)
     :param samples: number of samples to take along each axis (optional)
     """
     points = np.linspace(-range/2, range/2, samples)
@@ -237,7 +276,7 @@ def plot_field_over_axis(ax: matplotlib.axes.Axes, axis: str, range: float,
         case _:
             raise ValueError("Parameter `axis` must be one of 'x', 'y' or 'z'.")
 
-    ax.set_title(f"Field intensity over {axis} axis")
+    ax.set_title(f"Field intensity along {axis} axis")
     ax.plot(points, B_values)
     ax.set_xlabel(f"{axis} (m)")
     ax.set_ylabel("B (T)")
