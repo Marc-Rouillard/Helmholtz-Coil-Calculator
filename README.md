@@ -18,3 +18,7 @@ Once you have installed the necessary packages you can edit the inputs in `calcu
 `python src/calculate.py`
 
 The matplotlib layout manager is not perfect so you may need increase the window size to avoid overlapping plots.
+
+## Limitations and Future Improvement
+* The current approach to calculating the field strength and obtaining region of interest parameters is fairly basic and could certainly be optimised to improve calculation times.
+* The current implementation is limited to square coils. Alternative implementations could extend the simulation to circular and irregularly shaped coils, although these may require substantial changes to the approach to be feasible
